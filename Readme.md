@@ -6,6 +6,10 @@ example:
 import channelmodel.capacity as capacity
 import channelmodel.channel as channel
 
+#Init the tables
+capacity.load_oai_tables()
+capacity.load_3gpp_tables()
+
 fc = 27 #GHz
 B = 200 #Mhz 
 NF = 7 #dBm

@@ -20,7 +20,7 @@ def snr(tx_power, tx_gain, rx_gain, pathloss,  bandwidth, NF):
 def noise(bandwidth):
     '''Compute the thermic noise for a given bandwidth, assuming a noise density of -174dBm/Hz
             Parameters:
-                bandwidth (float): Bandwidth in MHz
+                bandwidth (float): Bandwidth of the transmission in MHz
             Returns
                 noise (foat): Noise in dBm
     '''

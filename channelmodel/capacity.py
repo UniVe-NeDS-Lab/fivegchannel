@@ -5,6 +5,33 @@ import os
 this_folder = os.path.dirname(__file__)
 
 
+def load_oai_tables():
+    '''Load in memory the tables with the MCS BLER SNR values
+    '''
+    dfs = [pd.read_csv(f'{this_folder}/sinr_bler/OAI/mcs{mcs}_awgn_5G.csv', sep=';') for mcs in range(29)]
+    global mcs_table
+    mcs_table = pd.concat(dfs)
+    mcs_table['bler'] = mcs_table.err0/mcs_table.trials0
+    return
+
+
+def load_3gpp_tables(direction='dl', table=1) -> None:
+    '''Load in memory the tables with the 3gpp DLSCH tables
+            Parameters:
+                direction (str): In what direction (dl for DLSCH, ul for ULSCH)
+                table (int): What table to load [1,2,3]
+    '''
+    if table == 1 and direction == 'dl':
+        filename = 'PDSCH_table1.csv'
+    elif table == 2 and direction == 'dl':
+        filename = 'PDSCH_table2.csv'
+    else:
+        raise Exception("Table not found")
+    global table_3gpp
+    table_3gpp = pd.read_csv(f'{this_folder}/{filename}', delimiter=',', index_col='mcs')
+    return
+
+
 def mcs(meas_snr: float, max_bler: float) -> int:
     ''' Compute the usable MCS for a given SNR using the OpenAirInterface tables
             Parameters:
@@ -13,10 +40,6 @@ def mcs(meas_snr: float, max_bler: float) -> int:
             Returns:
                 mcs (int): Maximum usable MCS
     '''
-
-    dfs = [pd.read_csv(f'{this_folder}/sinr_bler/OAI/mcs{mcs}_awgn_5G.csv', sep=';') for mcs in range(29)]
-    mcs_table = pd.concat(dfs)
-    mcs_table['bler'] = mcs_table.err0/mcs_table.trials0
     row = mcs_table[(mcs_table.bler <= max_bler) & (mcs_table.SNR <= meas_snr)]
     if not row.empty:
         best_val = row.iloc[row.MCS.argmax()]
@@ -41,12 +64,8 @@ def modord_rate(mcs: int, table: int, direction: str = 'dl') -> tuple[float, flo
         filename = 'PDSCH_table2.csv'
     else:
         raise Exception("Table not found")
-    with open(f'{this_folder}/{filename}') as fr:
-        header = fr.readline()
-        data = list(fr.readlines())
-        read_mcs, modord, rate, se = map(float, data[mcs].split(','))
-        # assert (int(read_mcs) == mcs)
-        return modord, rate
+    row = table_3gpp.loc[mcs].values
+    return (row[0], row[1])
 
 
 def capacity(mcs: int, prb: int, layers: int, num: int, fr: int, slot_r: float = 0.7, direction: str = 'dl', table=1) -> float:
