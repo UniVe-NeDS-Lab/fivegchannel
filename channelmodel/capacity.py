@@ -152,7 +152,10 @@ def capacity_snr(snr: float, bandwidth: int, max_bler: float, num: int, layers: 
     '''
     prb = get_resource_blocks(bandwidth, num, fr)
     i = mcs(snr, max_bler)
-    C = capacity(i, prb, layers, num, fr, table=1)
+    if i >= 0:
+        C = capacity(i, prb, layers, num, fr, table=1)
+    else:
+        C = 0
     return C
 
 
