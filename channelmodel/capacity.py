@@ -8,10 +8,15 @@ this_folder = os.path.dirname(__file__)
 def load_oai_tables():
     '''Load in memory the tables with the MCS BLER SNR values
     '''
-    dfs = [pd.read_csv(f'{this_folder}/sinr_bler/OAI/mcs{mcs}_awgn_5G.csv', sep=';') for mcs in range(29)]
-    global mcs_table
-    mcs_table = pd.concat(dfs)
-    mcs_table['bler'] = mcs_table.err0/mcs_table.trials0
+    dfs = [pd.read_csv(f'{this_folder}/sinr_bler/OAI/SISO/mcs{mcs}_awgn_5G.csv', sep=';') for mcs in range(29)]
+    global mcs_table_siso
+    mcs_table_siso = pd.concat(dfs)
+    mcs_table_siso['bler'] = mcs_table_siso.err0/mcs_table_siso.trials0
+    dfs = [pd.read_csv(f'{this_folder}/sinr_bler/OAI/MIMO/mcs{mcs}_cdlc_mimo2x2_dl.csv', sep=';') for mcs in range(29)]
+    global mcs_table_mimo
+    mcs_table_mimo = pd.concat(dfs)
+    mcs_table_mimo['bler'] = mcs_table_mimo.err0/mcs_table_mimo.trials0
+
     return
 
 
@@ -32,15 +37,28 @@ def load_3gpp_tables(direction='dl', table=1) -> None:
     return
 
 
-def mcs(meas_snr: float, max_bler: float) -> int:
+# def mcs_shannon(snr):
+#     meas_se = m.log2(1 + 10**(snr/10))
+#     row = table_3gpp[table_3gpp.se > meas_se]
+#     for mcs, se in enumerate(se_table):
+#         if meas_se < se:
+#             break
+#     return mcs-1
+
+
+def mcs(meas_snr: float, max_bler: float, layers: int) -> int:
     ''' Compute the usable MCS for a given SNR using the OpenAirInterface tables
             Parameters:
                 meas_snr (float): SNR measured from the RX device
                 max_bler (float): Maximum Block Error Rate
+                layers (int): MIMO layers [1,2,4,8]
             Returns:
                 mcs (int): Maximum usable MCS
     '''
-    row = mcs_table[(mcs_table.bler <= max_bler) & (mcs_table.SNR <= meas_snr)]
+    if layers == 1:
+        row = mcs_table_siso[(mcs_table_siso.bler <= max_bler) & (mcs_table_siso.SNR <= meas_snr)]
+    else:
+        row = mcs_table_mimo[(mcs_table_mimo.bler <= max_bler) & (mcs_table_mimo.SNR <= meas_snr)]
     if not row.empty:
         best_val = row.iloc[row.MCS.argmax()]
         # print(best_val.MCS, max_bler, best_val.bler, meas_snr, best_val.SNR)
@@ -151,7 +169,7 @@ def capacity_snr(snr: float, bandwidth: int, max_bler: float, num: int, layers: 
                 C (float): Capacity in Mb/s
     '''
     prb = get_resource_blocks(bandwidth, num, fr)
-    i = mcs(snr, max_bler)
+    i = mcs(snr, max_bler, layers)
     if i >= 0:
         C = capacity(i, prb, layers, num, fr, table=1)
     else:
