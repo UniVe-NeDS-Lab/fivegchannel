@@ -1,5 +1,6 @@
 
 import numpy as np
+import math as m
 # import numba
 speed_of_light = 299792458
 
@@ -39,6 +40,18 @@ def pathloss_fspl(d, frequency):
     '''
     return 20*np.log10(d) + 20*np.log10(frequency*1e9) - 147.55
 
+def get_indoor_pl(self, frequency):
+    '''Compute the ETSI additional indoor pathloss in dBm from the TR 38.901 model O2I high loss model
+            Parameters:
+                frequency (float): Carrier Frequency in GHz
+            Returns:
+                pathloss (float): Pathloss in dBm
+    '''
+    #TR 38.901 model O2I high loss
+    l_glass = 2+0.2*frequency
+    l_concrete = 5+4*frequency
+    loss = 5 - 10*m.log10(0.7*10**(-l_glass/10) + 0.3*10**(-l_concrete/10))
+    return loss
 
 # @numba.vectorize([numba.float64(numba.float64, numba.int32, numba.float64)])
 def pathloss_etsi(d, los, frequency):
