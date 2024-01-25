@@ -26,10 +26,8 @@ def AE(phi, theta):
     return 8-min(-(AEv(theta) + AEh(phi)), 30)
 
 @vectorize([float64(float64,float64,float64,float64)])
-def AA(tetha, phi, tetha_etilt, phi_escan):
+def AA(tetha, phi, tetha_etilt, phi_escan, Nh, Nv):
     rho = 1
-    Nh = 4
-    Nv = 4
     v = np.array([[np.exp(1j*2*math.pi*(n*1/2 *np.cos(tetha) + m*1/2*np.sin(tetha)*np.sin(phi))) for m in range(Nh)] for n in range(Nv)])
     w = np.array([[np.exp(1j*2*math.pi*(n*1/2 *np.sin(tetha_etilt) - m*1/2*np.cos(tetha_etilt)*np.sin(phi_escan)))/np.sqrt(Nh*Nv) for m in range(Nh)] for n in range(Nv)])
     sum = np.abs(np.sum(np.multiply(v,w)))**2
