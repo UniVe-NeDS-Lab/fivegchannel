@@ -1,5 +1,5 @@
 import math
-from numba import vectorize, float64
+from numba import vectorize, float64, int64
 import numpy as np
 import math
 from scipy.constants import speed_of_light as c
@@ -25,12 +25,16 @@ def AEh(phi):
 def AE(phi, theta):
     return 8-min(-(AEv(theta) + AEh(phi)), 30)
 
-@vectorize([float64(float64,float64,float64,float64)])
+@vectorize([float64(float64,float64,float64,float64,int64,int64)])
 def AA(tetha, phi, tetha_etilt, phi_escan, Nh, Nv):
-    rho = 1
+    rho = 0.95
     v = np.array([[np.exp(1j*2*math.pi*(n*1/2 *np.cos(tetha) + m*1/2*np.sin(tetha)*np.sin(phi))) for m in range(Nh)] for n in range(Nv)])
     w = np.array([[np.exp(1j*2*math.pi*(n*1/2 *np.sin(tetha_etilt) - m*1/2*np.cos(tetha_etilt)*np.sin(phi_escan)))/np.sqrt(Nh*Nv) for m in range(Nh)] for n in range(Nv)])
     sum = np.abs(np.sum(np.multiply(v,w)))**2
     val = 10*np.log10(1+rho*(sum -1))+AE(phi, tetha)
     return val
 
+
+@vectorize([float64(float64,float64,int64,int64)])
+def AAh(phi, phi_escan, Nh, Nv):
+    return AA(np.pi/2, phi, 0, phi_escan, Nh, Nv)
